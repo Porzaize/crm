@@ -1,0 +1,13 @@
+.vercel
+.next
+node_modules
+.env.local
+*.xlsx
+__pycache__
+*.pyc
+supabase/.temp/
+.DS_Store
+
+migrate.py
+migrate_bulk.py
+setup_db.py
