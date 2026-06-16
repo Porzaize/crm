@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM - ระบบติดตามลูกค้าขาดฝาก</title>
+<style>
+:root {
+  --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2d3148;
+  --accent:#6c63ff; --green:#22c55e; --red:#ef4444; --yellow:#f59e0b; --cyan:#06b6d4;
+  --text:#e2e8f0; --text2:#94a3b8; --text3:#64748b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Noto Sans Thai',sans-serif;font-size:14px;display:flex;min-height:100vh}
+
+/* ─── Sidebar ─── */
+#sidebar{width:220px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto}
+.logo{padding:20px 16px;border-bottom:1px solid var(--border)}
+.logo h1{font-size:15px;font-weight:700;color:var(--accent)}
+.logo p{font-size:11px;color:var(--text3);margin-top:2px}
+.nav-section{padding:10px 0;border-bottom:1px solid var(--border)}
+.nav-label{font-size:10px;color:var(--text3);padding:0 16px 5px;text-transform:uppercase;letter-spacing:.8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;color:var(--text2);transition:all .15s;font-size:13px;border-left:3px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:rgba(108,99,255,.12);color:var(--accent);border-left-color:var(--accent)}
+.badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600}
+.badge.green{background:var(--green)}
+.badge.yellow{background:var(--yellow);color:#000}
+
+/* ─── Main ─── */
+#main{margin-left:220px;flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;gap:12px}
+.topbar h2{font-size:15px;font-weight:600;white-space:nowrap}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 11px;gap:7px}
+.search-box input{background:none;border:none;outline:none;color:var(--text);width:180px;font-size:13px}
+.search-box input::placeholder{color:var(--text3)}
+.content{padding:20px}
+
+/* ─── Cards ─── */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.card.blue::before{background:var(--accent)}.card.green::before{background:var(--green)}
+.card.yellow::before{background:var(--yellow)}.card.red::before{background:var(--red)}
+.card-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+.card-value{font-size:24px;font-weight:700;line-height:1}
+.card-sub{font-size:12px;color:var(--text2);margin-top:5px}
+.card-icon{position:absolute;right:14px;top:14px;font-size:26px;opacity:.12}
+
+/* ─── Buttons ─── */
+.btn{padding:7px 15px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:opacity .15s}
+.btn:hover{opacity:.82}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text2)}
+.btn-sm{padding:4px 10px;font-size:12px;border-radius:6px}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:5px}
+
+/* ─── Filters ─── */
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filter-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:5px 13px;border-radius:20px;cursor:pointer;font-size:12px;transition:all .15s}
+.filter-btn.active{background:rgba(108,99,255,.18);border-color:var(--accent);color:var(--accent)}
+.filter-btn:hover{border-color:var(--text3)}
+
+/* ─── Table ─── */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface2);padding:10px 13px;text-align:left;font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+td{padding:9px 13px;font-size:13px;color:var(--text);white-space:nowrap}
+.phone{font-family:monospace;color:var(--text2);font-size:12px}
+
+/* ─── Status badges ─── */
+.st{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.st-answered{background:rgba(34,197,94,.14);color:var(--green)}
+.st-notans{background:rgba(239,68,68,.12);color:var(--red)}
+.st-tracking{background:rgba(245,158,11,.13);color:var(--yellow)}
+.st-returned{background:rgba(108,99,255,.15);color:var(--accent)}
+.st-churned{background:rgba(239,68,68,.12);color:var(--red)}
+.st-sms{background:rgba(6,182,212,.12);color:var(--cyan)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;background:currentColor}
+
+/* ─── Pagination ─── */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid var(--border)}
+.page-info{font-size:12px;color:var(--text3)}
+.page-btns{display:flex;gap:5px}
+.page-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:4px 11px;border-radius:6px;cursor:pointer;font-size:12px}
+.page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ─── Section header ─── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;flex-wrap:wrap;gap:8px}
+.section-title{font-size:15px;font-weight:600}
+
+/* ─── Bar chart ─── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.chart-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:14px}
+.bar-chart{display:flex;flex-direction:column;gap:9px}
+.bar-row{display:flex;align-items:center;gap:9px}
+.bar-name{width:90px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0}
+.bar-outer{flex:1;background:var(--surface2);border-radius:4px;height:19px;overflow:hidden}
+.bar-inner{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:7px;transition:width .4s}
+.bar-val{font-size:11px;font-weight:600;color:#fff;white-space:nowrap}
+
+/* ─── Progress ─── */
+.prog{background:var(--surface2);border-radius:4px;height:6px;width:72px;overflow:hidden;display:inline-block}
+.prog-fill{height:100%;border-radius:4px}
+
+/* ─── Views ─── */
+.view{display:none}.view.active{display:block}
+
+/* ─── Modal ─── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto}
+.modal-lg{max-width:800px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{background:var(--surface2);border:1px solid var(--border);color:var(--text2);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+
+/* ─── Form ─── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.form-group input,.form-group select,.form-group textarea{
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  padding:8px 11px;border-radius:8px;font-size:13px;outline:none;font-family:inherit;
+  transition:border-color .15s
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group select option{background:var(--surface2)}
+.toggle-row{display:flex;gap:10px;flex-wrap:wrap}
+.toggle-btn{background:var(--surface2);border:2px solid var(--border);color:var(--text2);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .15s;user-select:none}
+.toggle-btn.active-yes{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.1)}
+.toggle-btn.active-no{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.08)}
+.toggle-btn.active-sms{border-color:var(--cyan);color:var(--cyan);background:rgba(6,182,212,.1)}
+
+/* ─── Day tracking grid ─── */
+.day-grid-track{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.day-cell-track{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 5px;text-align:center;cursor:pointer;transition:all .15s}
+.day-cell-track:hover{border-color:var(--accent)}
+.day-cell-track.returned{background:rgba(34,197,94,.13);border-color:var(--green)}
+.day-cell-track.churned{background:rgba(239,68,68,.1);border-color:var(--red)}
+.day-cell-track.has-dep{background:rgba(108,99,255,.13);border-color:var(--accent)}
+.day-num-label{font-size:10px;color:var(--text3);margin-bottom:3px}
+.day-dep-val{font-size:11px;font-weight:700;color:var(--accent)}
+.day-status-dot{width:8px;height:8px;border-radius:50%;margin:3px auto 0;background:var(--text3)}
+.day-status-dot.green{background:var(--green)}
+.day-status-dot.red{background:var(--red)}
+
+/* ─── Filters row ─── */
+.filters-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.filters-row .filters{margin-bottom:0}
+.cal-toggle-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:5px 13px;border-radius:20px;cursor:pointer;font-size:12px;transition:all .15s;white-space:nowrap}
+.cal-toggle-btn:hover,.cal-toggle-btn.active{background:rgba(108,99,255,.15);border-color:var(--accent);color:var(--accent)}
+.date-chip{display:inline-flex;align-items:center;background:rgba(108,99,255,.18);border:1px solid var(--accent);color:var(--accent);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+
+/* ─── iOS-style Calendar ─── */
+.sc-inline-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;animation:fadeIn .18s ease}
+.sc-ios-header{display:flex;align-items:flex-end;justify-content:space-between;padding:18px 18px 0}
+.sc-ios-title{font-size:34px;font-weight:700;color:var(--text);line-height:1.1}
+.sc-ios-controls{display:flex;align-items:center;gap:6px;padding-bottom:4px}
+.sc-nav-btn{background:none;border:none;color:var(--text2);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.sc-nav-btn:hover{background:rgba(255,255,255,.1)}
+.sc-today-btn{background:none;border:none;color:var(--accent);padding:4px 10px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;transition:background .15s}
+.sc-today-btn:hover{background:rgba(108,99,255,.15)}
+.sc-close-btn{background:rgba(255,255,255,.08);border:none;color:var(--text2);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.sc-close-btn:hover{background:rgba(255,255,255,.15)}
+.sc-dow-row{display:grid;grid-template-columns:repeat(7,1fr);padding:10px 4px 4px}
+.sc-dow{text-align:center;font-size:11px;font-weight:500;color:rgba(255,255,255,.35);padding:2px 0}
+.sc-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:0 4px 12px}
+.sc-cell{min-height:68px;padding:5px 3px 5px;cursor:pointer;text-align:center;border-top:1px solid rgba(255,255,255,.07);position:relative;transition:background .1s}
+.sc-cell:not(.sc-empty):hover{background:rgba(255,255,255,.04)}
+.sc-cell.sc-empty{pointer-events:none}
+.sc-date{font-size:20px;font-weight:400;color:var(--text);width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin:0 auto 2px;line-height:1}
+.sc-cell.sc-today .sc-date{background:#ff3b30;color:#fff;font-weight:600}
+.sc-cell.sc-selected:not(.sc-today) .sc-date{background:var(--accent);color:#fff;font-weight:600}
+.sc-cell.sc-sunday:not(.sc-today):not(.sc-selected) .sc-date{color:rgba(255,255,255,.28)}
+.sc-cell.sc-saturday:not(.sc-today):not(.sc-selected) .sc-date{color:rgba(255,255,255,.28)}
+/* Event pills */
+.sc-pills{display:flex;flex-direction:column;gap:2px;padding:0 1px}
+.sc-pill{border-radius:6px;padding:1px 5px 2px;font-size:10px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;display:flex;align-items:center;gap:3px;line-height:1.4}
+.sc-pill.call{background:rgba(6,182,212,.22);color:var(--cyan)}
+.sc-pill.ret{background:rgba(34,197,94,.22);color:var(--green)}
+.sc-pill-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+/* Day detail panel */
+.sc-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;animation:fadeIn .2s ease;margin-top:12px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.sc-panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sc-panel-title{font-size:16px;font-weight:700}
+.sc-panel-close{background:var(--surface2);border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:13px}
+.sc-panel-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sc-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.sc-event{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:7px;border-left:3px solid var(--border)}
+.sc-event.call-event{border-left-color:var(--cyan)}
+.sc-event.ret-event{border-left-color:var(--green)}
+.sc-event-phone{font-family:monospace;font-size:13px;font-weight:600;margin-bottom:3px}
+.sc-event-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+
+/* ─── Calendar (legacy, kept for tracking view) ─── */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-title{font-size:18px;font-weight:700;min-width:180px;text-align:center}
+.cal-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:7px 16px;border-radius:8px;cursor:pointer;font-size:14px;transition:all .15s}
+.cal-btn:hover{border-color:var(--accent);color:var(--accent)}
+.cal-btn.today{background:rgba(108,99,255,.15);border-color:var(--accent);color:var(--accent);font-size:12px;font-weight:600}
+.cal-view-tabs{display:flex;gap:6px}
+.cal-view-tab{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500}
+.cal-view-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cal-year-select{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:6px 10px;border-radius:8px;font-size:13px;cursor:pointer}
+.cal-day-headers{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-day-hdr{text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:6px 0;text-transform:uppercase}
+.cal-day-hdr.sun{color:#ef4444}.cal-day-hdr.sat{color:#6c63ff}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;min-height:90px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.cal-cell:hover{border-color:var(--accent);transform:translateY(-1px)}
+.cal-cell.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+.cal-cell.empty:hover{transform:none}
+.cal-cell.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.cal-cell.selected{border-color:var(--accent);background:rgba(108,99,255,.1)}
+.cal-cell.has-calls{border-left:3px solid var(--cyan)}
+.cal-cell.has-returns{border-left:3px solid var(--green)}
+.cal-cell.has-both{border-left:3px solid var(--accent)}
+.cal-cell.sunday .cal-date-num{color:#ef4444}
+.cal-cell.saturday .cal-date-num{color:#6c63ff}
+.cal-date-num{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:5px}
+.cal-cell.today .cal-date-num{background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+.cal-stats{display:flex;flex-direction:column;gap:2px}
+.cal-stat{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)}
+.cal-stat .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.cal-stat .val{font-weight:600}
+.cal-heatmap{position:absolute;bottom:0;left:0;right:0;height:3px}
+
+/* Week grid */
+.week-grid{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px}
+.week-day-col{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.week-day-hdr{padding:8px 10px;background:var(--surface2);border-bottom:1px solid var(--border);text-align:center}
+.week-day-hdr .day-name{font-size:11px;color:var(--text3);text-transform:uppercase}
+.week-day-hdr .day-num-big{font-size:20px;font-weight:700}
+.week-day-hdr.today-col{background:rgba(108,99,255,.15)}
+.week-day-hdr.today-col .day-num-big{color:var(--accent)}
+.week-day-body{padding:8px}
+.week-event{background:var(--surface2);border-radius:6px;padding:5px 8px;margin-bottom:5px;font-size:11px;border-left:3px solid var(--accent)}
+.week-event.call{border-left-color:var(--cyan)}
+.week-event.ret{border-left-color:var(--green)}
+
+/* Day detail panel */
+.day-detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:16px}
+.day-detail-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.day-sections{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.day-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.event-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:7px}
+.event-card .ec-phone{font-family:monospace;font-size:13px;font-weight:600}
+.event-card .ec-site{font-size:11px;color:var(--text3)}
+.event-card .ec-meta{display:flex;gap:8px;margin-top:5px;flex-wrap:wrap}
+
+/* Month summary */
+.month-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}
+.month-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.month-box-title{font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;margin-bottom:12px}
+
+/* ─── Detail modal redesign ─── */
+.phone-link{background:none;border:none;color:var(--accent);font-family:monospace;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;text-decoration:underline;text-underline-offset:2px;transition:background .15s}
+.phone-link:hover{background:rgba(108,99,255,.12)}
+.detail-call-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:12px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)}
+.dcr-item{display:flex;flex-direction:column;gap:3px}
+.dcr-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.dcr-val{font-size:13px;font-weight:600}
+.detail-round-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+/* ─── Timeline ─── */
+.tl-item{display:flex;gap:14px;margin-bottom:0;position:relative}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:19px;top:40px;bottom:-2px;width:2px;background:var(--border)}
+.tl-icon-wrap{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:2px solid var(--border);background:var(--surface2);margin-top:2px;z-index:1}
+.tl-icon-wrap.online{border-color:var(--green);background:rgba(34,197,94,.1)}
+.tl-icon-wrap.offline{border-color:var(--red);background:rgba(239,68,68,.08)}
+.tl-icon-wrap.call{border-color:var(--cyan);background:rgba(6,182,212,.1)}
+.tl-icon-wrap.returned{border-color:var(--accent);background:rgba(108,99,255,.12)}
+.tl-icon-wrap.churned{border-color:var(--red);background:rgba(239,68,68,.1)}
+.tl-body{flex:1;padding-bottom:16px}
+.tl-date{font-size:11px;color:var(--text3);margin-bottom:4px}
+.tl-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.tl-card:hover{border-color:var(--accent)}
+.tl-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.tl-card-title{font-size:13px;font-weight:600}
+.tl-card-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tl-edit-btn{background:none;border:1px solid var(--border);color:var(--text3);padding:2px 8px;border-radius:5px;cursor:pointer;font-size:11px}
+.tl-edit-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tl-empty{color:var(--text3);font-size:13px;text-align:center;padding:24px;background:var(--surface2);border-radius:10px;border:1px dashed var(--border)}
+
+/* ─── Quick status form (inline in timeline) ─── */
+.tl-quick-form{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:16px}
+.tl-quick-title{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:.4px}
+.online-toggle{display:flex;gap:8px}
+.online-btn{flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);cursor:pointer;text-align:center;font-size:13px;font-weight:600;transition:all .15s}
+.online-btn.sel-online{border-color:var(--green);background:rgba(34,197,94,.12);color:var(--green)}
+.online-btn.sel-offline{border-color:var(--red);background:rgba(239,68,68,.08);color:var(--red)}
+
+/* ─── Round tabs ─── */
+.round-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.round-tab{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px}
+.round-tab.active{background:rgba(108,99,255,.18);border-color:var(--accent);color:var(--accent)}
+.round-tab.returned{border-color:var(--green);color:var(--green)}
+.round-tab.churned{border-color:var(--red);color:var(--red)}
+
+/* ─── Customer detail panel ─── */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.detail-field label{font-size:10px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:3px}
+.detail-field .val{font-size:14px;font-weight:500}
+
+/* ─── Week nav ─── */
+.week-nav{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.week-nav .week-label{font-size:14px;font-weight:600;color:var(--text);min-width:220px;text-align:center}
+.week-nav .btn-week{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+.week-nav .btn-week:hover{border-color:var(--accent);color:var(--accent)}
+.week-nav .btn-today{background:rgba(108,99,255,.15);border:1px solid var(--accent);color:var(--accent);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
+
+/* ─── Gap badge ─── */
+.gap-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:700}
+.gap-0{background:rgba(34,197,94,.18);color:var(--green)}
+.gap-1{background:rgba(34,197,94,.12);color:var(--green)}
+.gap-2{background:rgba(245,158,11,.12);color:var(--yellow)}
+.gap-3{background:rgba(245,158,11,.15);color:var(--yellow)}
+.gap-many{background:rgba(239,68,68,.1);color:var(--red)}
+.gap-none{background:var(--surface2);color:var(--text3)}
+
+/* ─── Return row highlight ─── */
+tr.row-returned td{background:rgba(34,197,94,.04)}
+tr.row-churned td{background:rgba(239,68,68,.03)}
+tr.row-tracking td{background:rgba(245,158,11,.03)}
+
+/* ─── Gap distribution ─── */
+.gap-dist{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.gap-dist-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.gap-dist-num{font-size:22px;font-weight:700;margin-bottom:4px}
+.gap-dist-label{font-size:11px;color:var(--text3)}
+
+/* ─── Timeline dot ─── */
+.timeline{display:flex;align-items:center;gap:4px;font-size:12px}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tl-line{flex:1;height:1px;background:var(--border);min-width:10px}
+
+/* ─── Loader ─── */
+.loader{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text3);font-size:15px;gap:10px}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── Toast ─── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;z-index:999;display:none;max-width:300px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+#toast.show{display:block}
+#toast.success{border-color:var(--green);color:var(--green)}
+#toast.error{border-color:var(--red);color:var(--red)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="logo">
+    <h1>🎯 CRM ติดตามลูกค้า</h1>
+    <p id="sidebar-month">ระบบติดตามลูกค้าขาดฝาก</p>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">เมนูหลัก</div>
+    <div class="nav-item active" onclick="showView('dashboard')" id="nav-dashboard">
+      <span>📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showView('weekly')" id="nav-weekly">
+      <span>📈</span> สรุปรายสัปดาห์
+    </div>
+    <div class="nav-item" onclick="showView('tracking')" id="nav-tracking">
+      <span>📅</span> ติดตามรายสัปดาห์
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">เว็บไซต์</div>
+    <div id="site-nav"></div>
+  </div>
+</nav>
+
+<div id="main">
+  <div class="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="topbar-right">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search-input" placeholder="ค้นหาเบอร์..." oninput="onSearch()">
+      </div>
+      <button class="btn btn-primary" id="btn-add-customer" onclick="openAddCustomer()" style="display:none">+ เพิ่มลูกค้า</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Dashboard -->
+    <div id="view-dashboard" class="view active">
+      <div class="cards" id="summary-cards"><div class="loader"><div class="spinner"></div>กำลังโหลด...</div></div>
+      <div class="chart-grid">
+        <div class="chart-box"><div class="chart-title">ยอดฝากกลับมา (฿) แยกตามเว็บ</div><div class="bar-chart" id="chart-deposit"></div></div>
+        <div class="chart-box"><div class="chart-title">อัตราการรับสาย % แยกตามเว็บ</div><div class="bar-chart" id="chart-answer"></div></div>
+      </div>
+      <div class="section-header"><span class="section-title">ภาพรวมแต่ละเว็บ</span></div>
+      <div class="table-wrap">
+        <table><thead><tr><th>เว็บ</th><th>โทรติดตาม</th><th>รับสาย</th><th>อัตรารับสาย</th><th>กลับมาฝาก</th><th>ยอดกลับมาฝาก</th><th>โบนัส</th><th>ROI โบนัส</th></tr></thead>
+        <tbody id="weekly-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Weekly -->
+    <div id="view-weekly" class="view">
+      <div class="cards" id="weekly-cards"></div>
+      <div class="section-header"><span class="section-title">สรุปรายสัปดาห์</span></div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>เว็บ</th><th>โทรติดตาม</th><th>รับสาย</th><th>รับสาย%</th><th>ไม่รับสาย</th><th>กลับมาฝาก</th><th>ยอดกลับมาฝาก</th><th>โบนัส</th><th>ROI%</th></tr></thead>
+        <tbody id="weekly-detail-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Tracking Weekly -->
+    <div id="view-tracking" class="view">
+      <div class="week-nav">
+        <button class="btn-week" onclick="changeWeek(-1)">◀ สัปดาห์ก่อน</button>
+        <div class="week-label" id="week-label">กำลังโหลด...</div>
+        <button class="btn-week" onclick="changeWeek(1)">สัปดาห์ถัดไป ▶</button>
+        <button class="btn-today" onclick="goThisWeek()">สัปดาห์นี้</button>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="cards" id="tracking-cards">
+        <div class="loader"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Gap distribution -->
+      <div class="gap-dist" id="gap-dist"></div>
+
+      <!-- Table -->
+      <div class="section-header">
+        <span class="section-title">รายละเอียดการติดตาม</span>
+        <div style="display:flex;gap:8px">
+          <select id="tracking-site-filter" onchange="renderTrackingTable()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:8px;font-size:12px">
+            <option value="">ทุกเว็บ</option>
+          </select>
+          <select id="tracking-status-filter" onchange="renderTrackingTable()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:8px;font-size:12px">
+            <option value="">ทุกสถานะ</option>
+            <option value="returned">กลับมาแล้ว ✅</option>
+            <option value="tracking">กำลังติดตาม 🔄</option>
+            <option value="churned">หายไปอีก ❌</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>เบอร์โทร</th>
+              <th>เว็บ</th>
+              <th>รอบที่</th>
+              <th>วันที่โทรติดตาม</th>
+              <th>สถานะสาย</th>
+              <th>วันที่กลับมาฝาก</th>
+              <th>ระยะเวลา</th>
+              <th>ยอดฝาก</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="tracking-tbody">
+            <tr><td colspan="10"><div class="loader"><div class="spinner"></div>กำลังโหลด...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Site -->
+    <div id="view-site" class="view">
+
+      <!-- ── Calendar panel (collapsible) ── -->
+      <div id="sc-panel-wrap" style="display:none;margin-bottom:16px">
+        <div class="sc-inline-card">
+          <div class="sc-ios-header">
+            <div class="sc-ios-title" id="sc-title">—</div>
+            <div class="sc-ios-controls">
+              <button class="sc-nav-btn" onclick="scChangePeriod(-1)">◀</button>
+              <button class="sc-nav-btn" onclick="scChangePeriod(1)">▶</button>
+              <button class="sc-today-btn" onclick="scGoToday()">เดือนนี้</button>
+              <button class="sc-close-btn" onclick="scToggle(false)">✕</button>
+            </div>
+          </div>
+          <div class="sc-dow-row">
+            <div class="sc-dow">อา</div><div class="sc-dow">จ</div>
+            <div class="sc-dow">อ</div><div class="sc-dow">พ</div>
+            <div class="sc-dow">พฤ</div><div class="sc-dow">ศ</div>
+            <div class="sc-dow">ส</div>
+          </div>
+          <div class="sc-grid" id="sc-grid"></div>
+        </div>
+      </div>
+
+      <!-- ── Filters row ── -->
+      <div class="filters-row">
+        <div class="filters" id="site-filters">
+          <button class="filter-btn active" onclick="setFilter('all',this)">ทั้งหมด</button>
+          <button class="filter-btn" onclick="setFilter('answered',this)">รับสาย</button>
+          <button class="filter-btn" onclick="setFilter('not_answered',this)">ไม่รับสาย</button>
+          <button class="filter-btn" onclick="setFilter('returned',this)">กลับมาฝาก</button>
+          <button class="filter-btn" onclick="setFilter('no_return',this)">ยังไม่กลับมา</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <!-- Active date chip -->
+          <div id="sc-date-chip" style="display:none">
+            <span class="date-chip">
+              <span id="sc-date-chip-label"></span>
+              <button onclick="scClearDate()" style="background:none;border:none;color:inherit;cursor:pointer;margin-left:4px;font-size:13px">✕</button>
+            </span>
+          </div>
+          <button class="cal-toggle-btn" id="cal-toggle-btn" onclick="scToggle(true)">📆 ปฏิทิน</button>
+        </div>
+      </div>
+
+      <!-- ── Table ── -->
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>เบอร์โทร</th><th>วันที่โทร</th><th>เวลา</th><th>สถานะสาย</th><th>SMS</th><th>ติดตามวันที่ผ่านมา</th><th>สถานะ</th><th>ยอดฝาก</th><th></th></tr></thead>
+          <tbody id="site-tbody"></tbody>
+        </table>
+        <div class="pagination">
+          <div class="page-info" id="page-info">-</div>
+          <div class="page-btns" id="page-btns"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Add Customer Modal ─── -->
+<div class="overlay" id="modal-add">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">➕ เพิ่มลูกค้าใหม่</div>
+      <button class="modal-close" onclick="closeModal('modal-add')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>เบอร์โทรศัพท์</label>
+        <input type="tel" id="add-phone" placeholder="0812345678" maxlength="10">
+      </div>
+      <div class="form-group">
+        <label>วันที่โทร</label>
+        <input type="date" id="add-call-date">
+      </div>
+      <div class="form-group">
+        <label>เวลาที่โทร</label>
+        <input type="time" id="add-call-time">
+      </div>
+      <div class="form-group full">
+        <label>สถานะการโทร</label>
+        <div class="toggle-row">
+          <button class="toggle-btn" id="t-answered" onclick="toggleCall('answered')">✅ รับสาย</button>
+          <button class="toggle-btn" id="t-not_answered" onclick="toggleCall('not_answered')">❌ ไม่รับสาย</button>
+          <button class="toggle-btn" id="t-sms" onclick="toggleCall('sms')">📩 ส่ง SMS</button>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label>หมายเหตุ</label>
+        <textarea id="add-note" rows="2" placeholder="รับแล้วตัดสาย / โปร20% / ..."></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal('modal-add')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveNewCustomer()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Customer Detail Modal ─── -->
+<div class="overlay" id="modal-detail">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div>
+          <div class="modal-title" id="detail-title"></div>
+          <div id="detail-site-label" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
+        </div>
+        <div id="detail-status-badge"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-detail')">✕</button>
+    </div>
+
+    <!-- Call info row -->
+    <div class="detail-call-row" id="detail-call-row"></div>
+
+    <!-- Round header -->
+    <div class="detail-round-header">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:600;color:var(--text2)">รอบการติดตาม</span>
+        <div class="round-tabs" id="round-tabs"></div>
+      </div>
+      <button class="btn btn-xs btn-outline" onclick="startNewRound()">+ รอบใหม่</button>
+    </div>
+
+    <!-- Timeline -->
+    <div id="detail-timeline">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">ไทม์ไลน์การติดตาม</div>
+        <button class="btn btn-sm btn-success" onclick="openAddTracking()">+ บันทึกสถานะวันนี้</button>
+      </div>
+      <div id="detail-tl-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Add Tracking Modal ─── -->
+<div class="overlay" id="modal-tracking">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">📅 บันทึกการติดตามวันนี้</div>
+      <button class="modal-close" onclick="closeModal('modal-tracking')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>วันที่</label>
+        <input type="date" id="tr-date">
+      </div>
+      <div class="form-group">
+        <label>วันที่ในรอบ (Day)</label>
+        <input type="number" id="tr-day" min="1" max="60" placeholder="1">
+      </div>
+      <div class="form-group full">
+        <label>สถานะลูกค้าวันนี้</label>
+        <div class="toggle-row">
+          <button class="toggle-btn" id="tr-t-tracking" onclick="toggleTrack('tracking')">🔄 ยังติดตามอยู่</button>
+          <button class="toggle-btn" id="tr-t-returned" onclick="toggleTrack('returned')">✅ กลับมาฝากแล้ว</button>
+          <button class="toggle-btn" id="tr-t-churned" onclick="toggleTrack('churned')">❌ หายไปอีก</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Login เข้าระบบ</label>
+        <div class="toggle-row">
+          <button class="toggle-btn" id="tr-t-login-y" onclick="toggleLogin(true)">✅ Login</button>
+          <button class="toggle-btn" id="tr-t-login-n" onclick="toggleLogin(false)">❌ ไม่ Login</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ยอดฝาก (฿)</label>
+        <input type="number" id="tr-deposit" min="0" step="0.01" placeholder="0">
+      </div>
+      <!-- Return date: shown only when status=returned -->
+      <div class="form-group" id="return-date-group" style="display:none">
+        <label>📅 วันที่กลับมาฝาก</label>
+        <input type="date" id="tr-return-date">
+      </div>
+      <div class="form-group" id="return-date-placeholder"></div>
+      <div class="form-group full">
+        <label>หมายเหตุ</label>
+        <input type="text" id="tr-note" placeholder="บันทึกเพิ่มเติม...">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal('modal-tracking')">ยกเลิก</button>
+      <button class="btn btn-success" onclick="saveTracking()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── Config ───────────────────────────────────────
+const SB_URL = 'https://joaaekjzmedegootzcms.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvYWFla2p6bWVkZWdvb3R6Y21zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzQ4ODQsImV4cCI6MjA5NjY1MDg4NH0.3c6zP2ypBJfegq1qTTE6Gp2T90hzjjNg4U9_3Ksgc08';
+const HDRS = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
+
+async function sb(method, table, body, params='') {
+  const url = `${SB_URL}/rest/v1/${table}${params ? '?'+params : ''}`;
+  const r = await fetch(url, { method, headers: HDRS, body: body ? JSON.stringify(body) : undefined });
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : [];
+}
+
+// ─── State ────────────────────────────────────────
+let crmData = null, currentSite = null, currentSiteId = null;
+let currentFilter = 'all', currentPage = 1, searchQuery = '';
+let detailCustomer = null, detailRounds = [], currentRoundIdx = 0;
+let detailTracking = [];
+let callState = {answered:false, not_answered:false, sms:false};
+let trackState = {status:'tracking', login:false};
+const PAGE_SIZE = 50;
+
+// ─── Load ─────────────────────────────────────────
+async function loadData() {
+  const [sites, customers, dailyDeps, weekly] = await Promise.all([
+    sb('GET','sites','','select=*&order=id'),
+    sb('GET','customers','','select=*&order=site_id,seq&limit=10000'),
+    sb('GET','daily_deposits','','select=*&limit=10000'),
+    sb('GET','weekly_summary','','select=*,sites(name)&order=site_id'),
+  ]);
+
+  const dailyMap = {};
+  for (const d of dailyDeps) {
+    if (!dailyMap[d.customer_id]) dailyMap[d.customer_id] = {};
+    dailyMap[d.customer_id][d.day_number] = parseFloat(d.deposit_amount);
+  }
+
+  const siteNameMap = Object.fromEntries(sites.map(s=>[s.id,s.name]));
+  const siteIdMap = Object.fromEntries(sites.map(s=>[s.name,s.id]));
+  const sitesData = {};
+  for (const s of sites) sitesData[s.name] = [];
+
+  for (const c of customers) {
+    const sn = siteNameMap[c.site_id]; if (!sn) continue;
+    const deps = dailyMap[c.id] || {};
+    sitesData[sn].push({
+      _id: c.id, id: c.seq, phone: c.phone,
+      call_date: c.call_date||'', call_time: c.call_time||'',
+      answered: c.answered, not_answered: c.not_answered, sms_sent: c.sms_sent,
+      total_deposit: parseFloat(c.total_deposit)||0, note: c.note||'',
+      daily_deposits: Array.from({length:31},(_,i)=>deps[i+1]||0),
+    });
+  }
+
+  const weeklyData = weekly.map(w=>({
+    site: w.sites?.name||'', total_calls: w.total_calls, answered: w.answered,
+    answered_pct: w.total_calls>0?Math.round(w.answered/w.total_calls*1000)/10:0,
+    not_answered: w.not_answered, return_customers: w.return_customers,
+    return_deposit: parseFloat(w.return_deposit), bonus: parseFloat(w.bonus),
+  }));
+
+  crmData = { sites: sitesData, siteIdMap, weekly: weeklyData };
+  buildSideNav();
+  renderDashboard();
+  renderWeekly();
+}
+
+// ─── Nav ──────────────────────────────────────────
+function buildSideNav() {
+  const nav = document.getElementById('site-nav');
+  nav.innerHTML = Object.keys(crmData.sites).map(s => {
+    const returned = crmData.sites[s].filter(c=>c.total_deposit>0).length;
+    return `<div class="nav-item" onclick="showSite('${s}')" id="nav-${s}">
+      <span>🌐</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${s}</span>
+      ${returned>0?`<span class="badge green">${returned}</span>`:''}
+    </div>`;
+  }).join('');
+}
+
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`view-${v}`).classList.add('active');
+  const navEl = document.getElementById(`nav-${v}`);
+  if(navEl) navEl.classList.add('active');
+  const titles = {dashboard:'Dashboard - ภาพรวม', weekly:'สรุปรายสัปดาห์', tracking:'📅 ติดตามรายสัปดาห์', calendar:'📆 ปฏิทินติดตาม'};
+  document.getElementById('page-title').textContent = titles[v]||v;
+  document.getElementById('btn-add-customer').style.display = 'none';
+  currentSite = null;
+  if(v==='tracking') loadTrackingView();
+  if(v==='calendar') calInit();
+}
+
+function showSite(name) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-site').classList.add('active');
+  const navEl = document.getElementById(`nav-${name}`);
+  if(navEl) navEl.classList.add('active');
+  currentSite = name;
+  currentSiteId = crmData.siteIdMap[name];
+  currentFilter = 'all';
+  currentPage = 1;
+  searchQuery = document.getElementById('search-input').value;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.filter-btn[onclick="setFilter(\'all\',this)"]').classList.add('active');
+  document.getElementById('page-title').textContent = `${name}`;
+  document.getElementById('btn-add-customer').style.display = 'block';
+  // Reset calendar state
+  scOpen=false;
+  scDayData={};scLoadedMonths=new Set();scSelectedDate=null;
+  document.getElementById('sc-panel-wrap').style.display='none';
+  document.getElementById('cal-toggle-btn').classList.remove('active');
+  document.getElementById('sc-date-chip').style.display='none';
+  renderSiteTable();
+}
+
+function setFilter(f,btn){currentFilter=f;currentPage=1;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderSiteTable()}
+function onSearch(){searchQuery=document.getElementById('search-input').value;currentPage=1;if(currentSite)renderSiteTable()}
+
+// ─── Site table ───────────────────────────────────
+function getFiltered() {
+  if(!currentSite) return [];
+  let d = crmData.sites[currentSite];
+  if(searchQuery) d = d.filter(c=>c.phone.includes(searchQuery.replace(/^0/,'')));
+  if(scSelectedDate) d = d.filter(c=>c.call_date===scSelectedDate);
+  if(currentFilter==='answered') d=d.filter(c=>c.answered);
+  if(currentFilter==='not_answered') d=d.filter(c=>c.not_answered);
+  if(currentFilter==='returned') d=d.filter(c=>c.total_deposit>0);
+  if(currentFilter==='no_return') d=d.filter(c=>c.total_deposit===0);
+  return d;
+}
+
+function renderSiteTable() {
+  const data = getFiltered(), total = data.length;
+  const start = (currentPage-1)*PAGE_SIZE;
+  const page = data.slice(start, start+PAGE_SIZE);
+
+  document.getElementById('site-tbody').innerHTML = page.length===0
+    ? `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">ไม่พบข้อมูล</td></tr>`
+    : page.map(c => {
+      const callBadge = c.answered
+        ? `<span class="st st-answered"><span class="dot"></span>รับสาย</span>`
+        : c.not_answered
+          ? `<span class="st st-notans"><span class="dot"></span>ไม่รับสาย</span>`
+          : `<span style="color:var(--text3);font-size:12px">—</span>`;
+      const smsBadge = c.sms_sent ? `<span class="st st-sms">📩 SMS</span>` : `<span style="color:var(--text3)">—</span>`;
+      const depBadge = c.total_deposit>0
+        ? `<span style="color:var(--green);font-weight:700">${Math.round(c.total_deposit).toLocaleString('th-TH')} ฿</span>`
+        : `<span style="color:var(--text3)">—</span>`;
+      const statusBadge = c.total_deposit>0
+        ? `<span class="st st-returned">กลับมาแล้ว</span>`
+        : c.answered
+          ? `<span class="st st-tracking">กำลังติดตาม</span>`
+          : `<span style="color:var(--text3);font-size:12px">ยังไม่ติดตาม</span>`;
+      return `<tr>
+        <td style="color:var(--text3)">${c.id}</td>
+        <td><button class="phone-link" onclick='openDetail(${JSON.stringify(c)})'>0${c.phone.slice(-9)}</button></td>
+        <td style="color:var(--text2);font-size:12px">${c.call_date||'—'}</td>
+        <td style="color:var(--text2);font-size:12px">${c.call_time||'—'}</td>
+        <td>${callBadge}</td>
+        <td>${smsBadge}</td>
+        <td style="color:var(--text3);font-size:12px">—</td>
+        <td>${statusBadge}</td>
+        <td>${depBadge}</td>
+        <td></td>
+      </tr>`;
+    }).join('');
+
+  const totalPages = Math.ceil(total/PAGE_SIZE);
+  document.getElementById('page-info').textContent = `แสดง ${Math.min(start+1,total)}-${Math.min(start+PAGE_SIZE,total)} จาก ${total.toLocaleString()} รายการ`;
+  const btns = document.getElementById('page-btns');
+  btns.innerHTML = '';
+  if(currentPage>1) btns.innerHTML+=`<button class="page-btn" onclick="goPage(${currentPage-1})">◀</button>`;
+  for(let p=Math.max(1,currentPage-2);p<=Math.min(totalPages,currentPage+2);p++)
+    btns.innerHTML+=`<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  if(currentPage<totalPages) btns.innerHTML+=`<button class="page-btn" onclick="goPage(${currentPage+1})">▶</button>`;
+}
+function goPage(p){currentPage=p;renderSiteTable()}
+
+// ─── Dashboard ────────────────────────────────────
+function renderDashboard() {
+  const w = crmData.weekly;
+  const tc=w.reduce((s,x)=>s+x.total_calls,0), ta=w.reduce((s,x)=>s+x.answered,0);
+  const tr=w.reduce((s,x)=>s+x.return_customers,0), td=w.reduce((s,x)=>s+x.return_deposit,0);
+  const tb=w.reduce((s,x)=>s+x.bonus,0);
+
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="card blue"><div class="card-icon">📞</div><div class="card-label">โทรติดตามทั้งหมด</div><div class="card-value">${tc.toLocaleString()}</div><div class="card-sub">ครั้ง จาก 9 เว็บ</div></div>
+    <div class="card green"><div class="card-icon">✅</div><div class="card-label">รับสาย</div><div class="card-value">${ta.toLocaleString()}</div><div class="card-sub">${(ta/tc*100).toFixed(1)}% ของการโทรทั้งหมด</div></div>
+    <div class="card yellow"><div class="card-icon">💰</div><div class="card-label">ยอดฝากกลับมา</div><div class="card-value">${Math.round(td).toLocaleString('th-TH')}</div><div class="card-sub">${tr} ราย กลับมาฝาก</div></div>
+    <div class="card red"><div class="card-icon">🎁</div><div class="card-label">โบนัสที่เติม</div><div class="card-value">${Math.round(tb).toLocaleString('th-TH')}</div><div class="card-sub">ROI: ${(tb/td*100).toFixed(1)}% ของยอดฝาก</div></div>`;
+
+  const tbody = document.getElementById('weekly-body');
+  tbody.innerHTML = w.map(x=>`<tr>
+    <td><strong>${x.site}</strong></td><td>${x.total_calls.toLocaleString()}</td><td>${x.answered.toLocaleString()}</td>
+    <td><div style="display:flex;align-items:center;gap:7px"><div class="prog"><div class="prog-fill" style="width:${x.answered_pct}%;background:var(--green)"></div></div><span style="color:var(--green)">${x.answered_pct}%</span></div></td>
+    <td>${x.return_customers}</td>
+    <td style="color:var(--accent);font-weight:700">${Math.round(x.return_deposit).toLocaleString('th-TH')} ฿</td>
+    <td style="color:var(--yellow)">${Math.round(x.bonus).toLocaleString('th-TH')} ฿</td>
+    <td>${x.return_deposit>0?(x.bonus/x.return_deposit*100).toFixed(1)+'%':'—'}</td>
+  </tr>`).join('');
+
+  const colors=['#6c63ff','#22c55e','#f59e0b','#ef4444','#06b6d4','#ec4899','#8b5cf6','#f97316','#14b8a6'];
+  const sd=[...w].sort((a,b)=>b.return_deposit-a.return_deposit);
+  const maxD=sd[0].return_deposit||1;
+  document.getElementById('chart-deposit').innerHTML=sd.map(x=>{
+    const ci=w.findIndex(ww=>ww.site===x.site);
+    return `<div class="bar-row"><span class="bar-name">${x.site}</span><div class="bar-outer"><div class="bar-inner" style="width:${Math.round(x.return_deposit/maxD*100)}%;background:${colors[ci%colors.length]}"><span class="bar-val">${Math.round(x.return_deposit).toLocaleString()}</span></div></div></div>`;
+  }).join('');
+
+  const sa=[...w].sort((a,b)=>b.answered_pct-a.answered_pct);
+  document.getElementById('chart-answer').innerHTML=sa.map(x=>{
+    const col=x.answered_pct>=40?'var(--green)':x.answered_pct>=25?'var(--yellow)':'var(--red)';
+    return `<div class="bar-row"><span class="bar-name">${x.site}</span><div class="bar-outer"><div class="bar-inner" style="width:${x.answered_pct}%;background:${col}"><span class="bar-val">${x.answered_pct}%</span></div></div></div>`;
+  }).join('');
+}
+
+function renderWeekly() {
+  const w=crmData.weekly;
+  const total={calls:w.reduce((s,x)=>s+x.total_calls,0),ans:w.reduce((s,x)=>s+x.answered,0),ret:w.reduce((s,x)=>s+x.return_customers,0),dep:w.reduce((s,x)=>s+x.return_deposit,0)};
+  document.getElementById('weekly-cards').innerHTML=`
+    <div class="card blue"><div class="card-label">โทรทั้งหมด</div><div class="card-value">${total.calls.toLocaleString()}</div></div>
+    <div class="card green"><div class="card-label">รับสาย</div><div class="card-value">${total.ans.toLocaleString()}</div><div class="card-sub">${(total.ans/total.calls*100).toFixed(1)}%</div></div>
+    <div class="card yellow"><div class="card-label">กลับมาฝาก</div><div class="card-value">${total.ret} ราย</div></div>
+    <div class="card red"><div class="card-label">ยอดฝากกลับมา</div><div class="card-value">${Math.round(total.dep).toLocaleString('th-TH')} ฿</div></div>`;
+  document.getElementById('weekly-detail-body').innerHTML=w.map((x,i)=>`<tr>
+    <td style="color:var(--text3)">${i+1}</td><td><strong>${x.site}</strong></td><td>${x.total_calls}</td>
+    <td style="color:var(--green)">${x.answered}</td>
+    <td><div style="display:flex;align-items:center;gap:7px"><div class="prog"><div class="prog-fill" style="width:${x.answered_pct}%;background:var(--green)"></div></div>${x.answered_pct}%</div></td>
+    <td style="color:var(--red)">${x.not_answered}</td>
+    <td style="color:var(--accent);font-weight:600">${x.return_customers}</td>
+    <td style="color:var(--accent);font-weight:700">${x.return_deposit.toLocaleString('th-TH',{minimumFractionDigits:2})} ฿</td>
+    <td style="color:var(--yellow)">${x.bonus.toLocaleString('th-TH',{minimumFractionDigits:2})} ฿</td>
+    <td>${x.return_deposit>0?(x.bonus/x.return_deposit*100).toFixed(1)+'%':'—'}</td>
+  </tr>`).join('');
+}
+
+// ─── Add Customer ─────────────────────────────────
+function openAddCustomer() {
+  callState = {answered:false,not_answered:false,sms:false};
+  document.getElementById('add-phone').value='';
+  document.getElementById('add-call-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('add-call-time').value=new Date().toTimeString().slice(0,5);
+  document.getElementById('add-note').value='';
+  ['t-answered','t-not_answered','t-sms'].forEach(id=>document.getElementById(id).className='toggle-btn');
+  openModal('modal-add');
+}
+
+function toggleCall(k) {
+  if(k==='sms'){callState.sms=!callState.sms;document.getElementById('t-sms').className='toggle-btn'+(callState.sms?' active-sms':'');return}
+  if(k==='answered'){callState.answered=!callState.answered;callState.not_answered=false}
+  else{callState.not_answered=!callState.not_answered;callState.answered=false}
+  document.getElementById('t-answered').className='toggle-btn'+(callState.answered?' active-yes':'');
+  document.getElementById('t-not_answered').className='toggle-btn'+(callState.not_answered?' active-no':'');
+}
+
+async function saveNewCustomer() {
+  const phone = document.getElementById('add-phone').value.trim().replace(/^0/,'');
+  if(!phone){toast('กรุณากรอกเบอร์โทร','error');return}
+  const existing = crmData.sites[currentSite]||[];
+  const maxSeq = existing.length>0?Math.max(...existing.map(c=>c.id)):0;
+  const body = {
+    site_id: currentSiteId, seq: maxSeq+1, phone,
+    call_date: document.getElementById('add-call-date').value||null,
+    call_time: document.getElementById('add-call-time').value||null,
+    answered: callState.answered, not_answered: callState.not_answered, sms_sent: callState.sms,
+    total_deposit: 0, note: document.getElementById('add-note').value||null,
+  };
+  const res = await sb('POST','customers',body);
+  if(!res||!res[0]){toast('เกิดข้อผิดพลาด กรุณาลองใหม่','error');return}
+  const newC = res[0];
+  crmData.sites[currentSite].unshift({
+    _id:newC.id, id:newC.seq, phone:newC.phone,
+    call_date:newC.call_date||'', call_time:newC.call_time||'',
+    answered:newC.answered, not_answered:newC.not_answered, sms_sent:newC.sms_sent,
+    total_deposit:0, note:newC.note||'', daily_deposits:Array(31).fill(0),
+  });
+  closeModal('modal-add');
+  renderSiteTable();
+  buildSideNav();
+  toast('เพิ่มลูกค้าสำเร็จ ✅','success');
+}
+
+// ─── Customer Detail ──────────────────────────────
+async function openDetail(c) {
+  detailCustomer = c;
+  document.getElementById('detail-title').textContent = `0${c.phone.slice(-9)}`;
+  document.getElementById('detail-site-label').textContent = currentSite;
+
+  // Status badge in header
+  const ovBadge = c.total_deposit>0
+    ? `<span class="st st-returned">กลับมาแล้ว</span>`
+    : c.answered
+      ? `<span class="st st-tracking">กำลังติดตาม</span>`
+      : `<span class="st st-notans">ยังไม่กลับมา</span>`;
+  document.getElementById('detail-status-badge').innerHTML = ovBadge;
+
+  // Call info row
+  const callBadge = c.answered
+    ? `<span class="st st-answered">รับสาย</span>`
+    : c.not_answered
+      ? `<span class="st st-notans">ไม่รับสาย</span>`
+      : `<span style="color:var(--text3)">—</span>`;
+  const smsBadge = c.sms_sent ? `<span class="st st-sms">📩 SMS</span>` : `<span style="color:var(--text3)">—</span>`;
+  document.getElementById('detail-call-row').innerHTML = `
+    <div class="dcr-item"><div class="dcr-label">เบอร์โทร</div><div class="dcr-val" style="font-family:monospace">0${c.phone.slice(-9)}</div></div>
+    <div class="dcr-item"><div class="dcr-label">วันที่โทร</div><div class="dcr-val">${c.call_date||'—'}</div></div>
+    <div class="dcr-item"><div class="dcr-label">เวลา</div><div class="dcr-val">${c.call_time||'—'}</div></div>
+    <div class="dcr-item"><div class="dcr-label">สถานะสาย</div><div class="dcr-val">${callBadge}</div></div>
+    <div class="dcr-item"><div class="dcr-label">SMS</div><div class="dcr-val">${smsBadge}</div></div>
+    <div class="dcr-item"><div class="dcr-label">ยอดฝากรวม</div><div class="dcr-val" style="color:${c.total_deposit>0?'var(--green)':'var(--text3)'}">${c.total_deposit>0?Math.round(c.total_deposit).toLocaleString('th-TH')+' ฿':'—'}</div></div>
+    ${c.note?`<div class="dcr-item" style="flex:1;min-width:180px"><div class="dcr-label">หมายเหตุ</div><div class="dcr-val" style="font-size:12px;color:var(--text2)">${c.note}</div></div>`:''}
+  `;
+
+  // Load rounds
+  detailRounds = await sb('GET','follow_up_rounds','',`select=*&customer_id=eq.${c._id}&order=round_number`);
+  if(detailRounds.length===0) {
+    const r1body = {customer_id:c._id,round_number:1,start_date:c.call_date||new Date().toISOString().slice(0,10),call_date:c.call_date||null,call_time:c.call_time||null,answered:c.answered,not_answered:c.not_answered,sms_sent:c.sms_sent,note:c.note||null,status:'tracking'};
+    const r1 = await sb('POST','follow_up_rounds',r1body);
+    if(r1&&r1[0]) detailRounds=[r1[0]];
+  }
+  currentRoundIdx=0;
+  renderRoundTabs();
+  await loadRoundDetail();
+  openModal('modal-detail');
+}
+
+function renderRoundTabs() {
+  const tabs = document.getElementById('round-tabs');
+  tabs.innerHTML = detailRounds.map((r,i)=>{
+    const cls = r.status==='returned'?' returned':r.status==='churned'?' churned':'';
+    const icon = r.status==='returned'?'✅':r.status==='churned'?'❌':'🔄';
+    return `<button class="round-tab${cls}${i===currentRoundIdx?' active':''}" onclick="switchRound(${i})">
+      ${icon} รอบที่ ${r.round_number}
+    </button>`;
+  }).join('');
+}
+
+async function switchRound(i) {
+  currentRoundIdx=i;
+  renderRoundTabs();
+  await loadRoundDetail();
+}
+
+async function loadRoundDetail() {
+  const round = detailRounds[currentRoundIdx];
+  if(!round){document.getElementById('detail-tl-list').innerHTML='<div class="tl-empty">ไม่พบข้อมูล</div>';return}
+  detailTracking = await sb('GET','round_tracking','',`select=*&round_id=eq.${round.id}&order=day_number`);
+  renderTimeline(round);
+}
+
+function renderTimeline(round) {
+  function dayDate(dayNum) {
+    if(!round.start_date) return '';
+    const d = new Date(round.start_date);
+    d.setDate(d.getDate() + dayNum - 1);
+    return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});
+  }
+
+  let html = '';
+
+  // Initial call entry
+  const callBadge = round.answered
+    ? `<span class="st st-answered">รับสาย</span>`
+    : round.not_answered
+      ? `<span class="st st-notans">ไม่รับสาย</span>`
+      : `<span style="color:var(--text3)">—</span>`;
+  html += `<div class="tl-item">
+    <div class="tl-icon-wrap call">📞</div>
+    <div class="tl-body">
+      <div class="tl-date">รอบที่ ${round.round_number} · เริ่ม ${round.start_date||'—'}</div>
+      <div class="tl-card" style="cursor:default">
+        <div class="tl-card-top">
+          <div class="tl-card-title">วันโทรติดตาม</div>
+          <div class="tl-card-meta">${callBadge}${round.sms_sent?'<span class="st st-sms">📩</span>':''}</div>
+        </div>
+        ${round.note?`<div style="font-size:12px;color:var(--text3);margin-top:4px">${round.note}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+
+  // Tracking days
+  for(const t of detailTracking) {
+    const icon = t.status==='returned' ? '✅' : t.status==='churned' ? '❌' : t.logged_in ? '🟢' : '🔴';
+    const cls = t.status==='returned' ? 'returned' : t.status==='churned' ? 'churned' : t.logged_in ? 'online' : 'offline';
+    const depHtml = t.deposit_amount>0
+      ? `<span style="color:var(--green);font-weight:700">${Math.round(t.deposit_amount).toLocaleString('th-TH')} ฿</span>`
+      : '';
+    const statusText = t.status==='returned'
+      ? `<span class="st st-returned">กลับมาฝาก</span>`
+      : t.status==='churned'
+        ? `<span class="st st-churned">หายไปอีก</span>`
+        : t.logged_in
+          ? `<span class="st" style="background:rgba(34,197,94,.15);color:var(--green)">Online</span>`
+          : `<span class="st" style="background:rgba(239,68,68,.08);color:var(--red)">Offline</span>`;
+    const dateLabel = t.track_date || dayDate(t.day_number);
+    html += `<div class="tl-item">
+      <div class="tl-icon-wrap ${cls}">${icon}</div>
+      <div class="tl-body">
+        <div class="tl-date">วันที่ ${t.day_number}${dateLabel?' · '+dateLabel:''}</div>
+        <div class="tl-card" onclick="openEditTracking(${t.day_number},${round.id})">
+          <div class="tl-card-top">
+            <div class="tl-card-title">วันที่ ${t.day_number}</div>
+            <div class="tl-card-meta">${statusText} ${depHtml}</div>
+            <button class="tl-edit-btn" onclick="event.stopPropagation();openEditTracking(${t.day_number},${round.id})">✏️</button>
+          </div>
+          ${t.note?`<div style="font-size:12px;color:var(--text3);margin-top:4px">${t.note}</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if(detailTracking.length===0) {
+    html += `<div class="tl-empty">ยังไม่มีการบันทึกติดตาม<br><span style="font-size:11px">กด "+ บันทึกสถานะวันนี้" เพื่อเริ่มต้น</span></div>`;
+  }
+
+  document.getElementById('detail-tl-list').innerHTML = html;
+}
+
+// ─── Add / Edit Tracking ──────────────────────────
+function openAddTracking() {
+  const round = detailRounds[currentRoundIdx];
+  if(!round){toast('ไม่พบข้อมูลรอบ','error');return}
+  const nextDay = detailTracking.length>0?Math.max(...detailTracking.map(t=>t.day_number))+1:1;
+  trackState={status:'tracking',login:false};
+  document.getElementById('tr-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('tr-day').value=nextDay;
+  document.getElementById('tr-deposit').value='';
+  document.getElementById('tr-note').value='';
+  ['tr-t-tracking','tr-t-returned','tr-t-churned','tr-t-login-y','tr-t-login-n'].forEach(id=>document.getElementById(id).className='toggle-btn');
+  document.getElementById('tr-t-tracking').className='toggle-btn active-yes';
+  openModal('modal-tracking');
+}
+
+function openEditTracking(dayNum, roundId) {
+  const t = detailTracking.find(x=>x.day_number===dayNum);
+  trackState={status:t?t.status:'tracking',login:t?t.logged_in:false};
+  document.getElementById('tr-date').value=t?t.track_date:new Date().toISOString().slice(0,10);
+  document.getElementById('tr-day').value=dayNum;
+  document.getElementById('tr-deposit').value=t?t.deposit_amount:'';
+  document.getElementById('tr-note').value=t?t.note||'':'';
+  ['tr-t-tracking','tr-t-returned','tr-t-churned'].forEach(id=>document.getElementById(id).className='toggle-btn');
+  const statusId={'tracking':'tr-t-tracking','returned':'tr-t-returned','churned':'tr-t-churned'}[trackState.status];
+  if(statusId) document.getElementById(statusId).className='toggle-btn active-yes';
+  document.getElementById('tr-t-login-y').className='toggle-btn'+(trackState.login?' active-yes':'');
+  document.getElementById('tr-t-login-n').className='toggle-btn'+(!trackState.login?' active-no':'');
+  openModal('modal-tracking');
+}
+
+function toggleTrack(s){
+  trackState.status=s;
+  ['tr-t-tracking','tr-t-returned','tr-t-churned'].forEach(id=>document.getElementById(id).className='toggle-btn');
+  const map={tracking:'tr-t-tracking',returned:'tr-t-returned',churned:'tr-t-churned'};
+  document.getElementById(map[s]).className='toggle-btn active-yes';
+  // Show/hide return date field
+  const rdg = document.getElementById('return-date-group');
+  const rdp = document.getElementById('return-date-placeholder');
+  if(s==='returned'){
+    rdg.style.display='flex';rdp.style.display='none';
+    if(!document.getElementById('tr-return-date').value)
+      document.getElementById('tr-return-date').value=new Date().toISOString().slice(0,10);
+  } else {
+    rdg.style.display='none';rdp.style.display='block';
+  }
+}
+function toggleLogin(v){
+  trackState.login=v;
+  document.getElementById('tr-t-login-y').className='toggle-btn'+(v?' active-yes':'');
+  document.getElementById('tr-t-login-n').className='toggle-btn'+(!v?' active-no':'');
+}
+
+async function saveTracking() {
+  const round = detailRounds[currentRoundIdx];
+  if(!round){toast('ไม่พบรอบที่เลือก','error');return}
+  const dayNum = parseInt(document.getElementById('tr-day').value)||1;
+  const dep = parseFloat(document.getElementById('tr-deposit').value)||0;
+  const existing = detailTracking.find(t=>t.day_number===dayNum);
+
+  const returnDate = trackState.status==='returned'
+    ? (document.getElementById('tr-return-date').value||new Date().toISOString().slice(0,10))
+    : null;
+
+  const body = {
+    round_id: round.id, day_number: dayNum,
+    track_date: document.getElementById('tr-date').value,
+    logged_in: trackState.login, deposit_amount: dep,
+    status: trackState.status,
+    return_date: returnDate,
+    note: document.getElementById('tr-note').value||null,
+  };
+
+  let saved;
+  if(existing){
+    saved = await sb('PATCH','round_tracking',body,`id=eq.${existing.id}`);
+    const idx = detailTracking.findIndex(t=>t.id===existing.id);
+    if(saved&&saved[0]) detailTracking[idx]=saved[0];
+  } else {
+    saved = await sb('POST','round_tracking',body);
+    if(saved&&saved[0]) detailTracking.push(saved[0]);
+  }
+
+  // Update round status + return_date if returned or churned
+  if(trackState.status==='returned'||trackState.status==='churned'){
+    const roundPatch = {status: trackState.status};
+    if(returnDate) roundPatch.return_date = returnDate;
+    await sb('PATCH','follow_up_rounds',roundPatch,`id=eq.${round.id}`);
+    detailRounds[currentRoundIdx].status = trackState.status;
+    if(returnDate) detailRounds[currentRoundIdx].return_date = returnDate;
+    renderRoundTabs();
+  }
+
+  // Update customer total deposit if returned
+  if(dep>0){
+    const newTotal = (detailCustomer.total_deposit||0)+dep;
+    await sb('PATCH','customers',{total_deposit:newTotal},`id=eq.${detailCustomer._id}`);
+    detailCustomer.total_deposit=newTotal;
+    const inList = (crmData.sites[currentSite]||[]).find(c=>c._id===detailCustomer._id);
+    if(inList){inList.total_deposit=newTotal;}
+    renderSiteTable();
+    buildSideNav();
+  }
+
+  closeModal('modal-tracking');
+  renderTimeline(round);
+  toast('บันทึกสำเร็จ ✅','success');
+}
+
+// ─── New Round ────────────────────────────────────
+async function startNewRound() {
+  const lastRound = detailRounds[detailRounds.length-1];
+  if(lastRound && lastRound.status==='tracking'){
+    toast('รอบปัจจุบันยังกำลังติดตามอยู่ กรุณาอัปเดตสถานะก่อน','error');return;
+  }
+  const newRoundNum = (lastRound?.round_number||0)+1;
+  const body = {
+    customer_id: detailCustomer._id, round_number: newRoundNum,
+    start_date: new Date().toISOString().slice(0,10), status: 'tracking',
+    answered: false, not_answered: false, sms_sent: false,
+  };
+  const res = await sb('POST','follow_up_rounds',body);
+  if(res&&res[0]){
+    detailRounds.push(res[0]);
+    currentRoundIdx=detailRounds.length-1;
+    detailTracking=[];
+    renderRoundTabs();
+    await loadRoundDetail();
+    toast(`เริ่มรอบที่ ${newRoundNum} แล้ว`,'success');
+  }
+}
+
+// ─── Calendar toggle in list view ─────────────────
+let scOpen = false;
+function scToggle(open) {
+  scOpen = open;
+  document.getElementById('sc-panel-wrap').style.display = open ? '' : 'none';
+  const btn = document.getElementById('cal-toggle-btn');
+  if(open) { btn.classList.add('active'); scInit(); }
+  else btn.classList.remove('active');
+}
+function scClearDate() {
+  scSelectedDate = null;
+  document.getElementById('sc-date-chip').style.display = 'none';
+  document.querySelectorAll('.sc-cell.sc-selected').forEach(el=>el.classList.remove('sc-selected'));
+  currentPage = 1;
+  renderSiteTable();
+}
+
+// ─── Site Calendar (sc) ───────────────────────────
+let scDate = new Date();          // displayed month
+let scDayData = {};               // 'YYYY-MM-DD' → {calls:[], returns:[]}
+let scLoadedMonths = new Set();   // loaded month keys 'YYYY-MM'
+let scSelectedDate = null;
+
+function scInit() {
+  scDate = new Date(scDate.getFullYear(), scDate.getMonth(), 1);
+  scLoad();
+}
+
+async function scLoad() {
+  const y = scDate.getFullYear(), m = scDate.getMonth();
+  const key = `${y}-${String(m+1).padStart(2,'0')}`;
+  document.getElementById('sc-title').textContent =
+    `${CAL_MONTHS_TH[m]} ${y+543}`;
+
+  if(!scLoadedMonths.has(key)) {
+    // Show spinner in grid
+    document.getElementById('sc-grid').innerHTML =
+      `<div style="grid-column:1/-1"><div class="loader"><div class="spinner"></div>กำลังโหลด...</div></div>`;
+    await scFetchMonth(y, m);
+    scLoadedMonths.add(key);
+  }
+  scRenderMonth();
+}
+
+async function scFetchMonth(y, m) {
+  if(!currentSite || !crmData) return;
+  const siteCustomerIds = (crmData.sites[currentSite]||[]).map(c=>c._id).filter(Boolean);
+  if(siteCustomerIds.length===0) return;
+
+  const start = `${y}-${String(m+1).padStart(2,'0')}-01`;
+  const end = `${y}-${String(m+1).padStart(2,'0')}-${new Date(y,m+1,0).getDate()}`;
+  const idsParam = `(${siteCustomerIds.join(',')})`;
+
+  // Fetch by call_date
+  const byCalls = await sb('GET','follow_up_rounds','',
+    `select=id,round_number,call_date,return_date,status,answered,not_answered,sms_sent,note,customer_id,customers(phone)&customer_id=in.${idsParam}&call_date=gte.${start}&call_date=lte.${end}&order=call_date`);
+  // Fetch by return_date
+  const byRet = await sb('GET','follow_up_rounds','',
+    `select=id,round_number,call_date,return_date,status,customers(phone,total_deposit)&customer_id=in.${idsParam}&return_date=gte.${start}&return_date=lte.${end}&order=return_date`);
+
+  for(const r of (byCalls||[])) {
+    const k = r.call_date; if(!k) continue;
+    if(!scDayData[k]) scDayData[k]={calls:[],returns:[]};
+    if(!scDayData[k].calls.find(x=>x.id===r.id)) scDayData[k].calls.push(r);
+  }
+  for(const r of (byRet||[])) {
+    const k = r.return_date; if(!k) continue;
+    if(!scDayData[k]) scDayData[k]={calls:[],returns:[]};
+    if(!scDayData[k].returns.find(x=>x.id===r.id)) scDayData[k].returns.push(r);
+  }
+}
+
+function scRenderMonth() {
+  const y = scDate.getFullYear(), m = scDate.getMonth();
+  const firstDow = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const todayStr = padDate(new Date());
+  let html = '';
+
+  for(let i=0;i<firstDow;i++) html+=`<div class="sc-cell sc-empty"></div>`;
+
+  for(let d=1;d<=daysInMonth;d++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const data = scDayData[ds]||{calls:[],returns:[]};
+    const nC=data.calls.length, nR=data.returns.length;
+    const dow = new Date(ds).getDay();
+    const isToday = ds===todayStr, isSel = ds===scSelectedDate;
+
+    const dowCls = dow===0?' sc-sunday':dow===6?' sc-saturday':'';
+    const cls = `sc-cell${dowCls}${isToday?' sc-today':''}${isSel?' sc-selected':''}`;
+
+    const pillsHtml = (nC===0&&nR===0) ? '' : `<div class="sc-pills">
+      ${nC>0?`<div class="sc-pill call"><span class="sc-pill-dot" style="background:var(--cyan)"></span>${nC} โทร</div>`:''}
+      ${nR>0?`<div class="sc-pill ret"><span class="sc-pill-dot" style="background:var(--green)"></span>${nR} กลับ</div>`:''}
+    </div>`;
+
+    html+=`<div class="${cls}" onclick="scSelectDay('${ds}')">
+      <div class="sc-date">${d}</div>${pillsHtml}
+    </div>`;
+  }
+
+  const total = firstDow+daysInMonth;
+  const trail = (7-(total%7))%7;
+  for(let i=0;i<trail;i++) html+=`<div class="sc-cell sc-empty"></div>`;
+
+  document.getElementById('sc-grid').innerHTML = html;
+}
+
+function scSelectDay(ds) {
+  // Toggle: click same date again = clear
+  if(scSelectedDate === ds) { scClearDate(); return; }
+  scSelectedDate = ds;
+  document.querySelectorAll('.sc-cell.sc-selected').forEach(el=>el.classList.remove('sc-selected'));
+  event.currentTarget.classList.add('sc-selected');
+  // Show date chip
+  document.getElementById('sc-date-chip').style.display = '';
+  document.getElementById('sc-date-chip-label').textContent = `📅 ${fmtDate(ds)}`;
+  // Filter the table
+  currentPage = 1;
+  renderSiteTable();
+}
+
+function scShowPanel(ds) {
+  const data = scDayData[ds]||{calls:[],returns:[]};
+  const nC=data.calls.length, nR=data.returns.length;
+  const totalDep = data.returns.reduce((s,r)=>s+(parseFloat(r.customers?.total_deposit)||0),0);
+
+  const callsHtml = nC===0
+    ? `<div style="color:var(--text3);font-size:12px;padding:8px 0">ไม่มีการโทรติดตามวันนี้</div>`
+    : data.calls.map(r=>`<div class="sc-event call-event">
+        <div class="sc-event-phone">0${(r.customers?.phone||'').slice(-9)}</div>
+        <div style="font-size:11px;color:var(--text3)">รอบที่ ${r.round_number}</div>
+        <div class="sc-event-meta">
+          ${r.answered?`<span class="st st-answered" style="font-size:10px;padding:2px 7px">รับสาย</span>`:r.not_answered?`<span class="st st-notans" style="font-size:10px;padding:2px 7px">ไม่รับสาย</span>`:''}
+          ${r.sms_sent?`<span class="st st-sms" style="font-size:10px;padding:2px 7px">📩 SMS</span>`:''}
+          ${r.status==='returned'?`<span class="st st-returned" style="font-size:10px;padding:2px 7px">✅ กลับมาแล้ว</span>`:r.status==='churned'?`<span class="st st-churned" style="font-size:10px;padding:2px 7px">❌ หายไป</span>`:`<span class="st st-tracking" style="font-size:10px;padding:2px 7px">🔄 ติดตาม</span>`}
+          ${r.note?`<span style="background:var(--surface);border:1px solid var(--border);padding:1px 6px;border-radius:5px;font-size:10px">${r.note}</span>`:''}
+        </div>
+      </div>`).join('');
+
+  const retHtml = nR===0
+    ? `<div style="color:var(--text3);font-size:12px;padding:8px 0">ไม่มีลูกค้ากลับมาฝากวันนี้</div>`
+    : data.returns.map(r=>{
+        const dep=parseFloat(r.customers?.total_deposit)||0;
+        const gap=dateDiff(r.call_date,r.return_date);
+        return `<div class="sc-event ret-event">
+          <div class="sc-event-phone">0${(r.customers?.phone||'').slice(-9)}</div>
+          <div class="sc-event-meta">
+            <span class="st st-returned" style="font-size:10px;padding:2px 7px">✅ กลับมาฝาก</span>
+            ${dep>0?`<span style="color:var(--green);font-weight:700;font-size:12px">${Math.round(dep).toLocaleString('th-TH')} ฿</span>`:''}
+            ${gap!==null?`<span class="gap-badge ${gapClass(gap)}" style="width:22px;height:22px;font-size:10px">${gap}</span><span style="font-size:10px;color:var(--text2)"> วันหลังโทร</span>`:''}
+            ${r.call_date?`<span style="font-size:10px;color:var(--text3)">โทร ${fmtDate(r.call_date)}</span>`:''}
+          </div>
+        </div>`;}).join('');
+
+  const summaryBadges = [
+    nC>0?`<span style="background:rgba(6,182,212,.12);color:var(--cyan);padding:3px 10px;border-radius:12px;font-size:12px">📞 ${nC} โทร</span>`:'',
+    nR>0?`<span style="background:rgba(34,197,94,.12);color:var(--green);padding:3px 10px;border-radius:12px;font-size:12px">✅ ${nR} กลับมา</span>`:'',
+    totalDep>0?`<span style="background:rgba(245,158,11,.12);color:var(--yellow);padding:3px 10px;border-radius:12px;font-size:12px">💰 ${Math.round(totalDep).toLocaleString('th-TH')} ฿</span>`:'',
+  ].filter(Boolean).join('');
+
+  document.getElementById('sc-day-panel').innerHTML=`<div class="sc-panel">
+    <div class="sc-panel-hdr">
+      <div>
+        <div class="sc-panel-title">📅 ${fmtDate(ds)}</div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${summaryBadges||`<span style="color:var(--text3);font-size:12px">ไม่มีกิจกรรม</span>`}</div>
+      </div>
+      <button class="sc-panel-close" onclick="document.getElementById('sc-day-panel').innerHTML='';scSelectedDate=null;document.querySelectorAll('.sc-cell.sc-selected').forEach(el=>el.classList.remove('sc-selected'))">✕</button>
+    </div>
+    <div class="sc-panel-cols">
+      <div>
+        <div class="sc-col-title">📞 โทรติดตาม (${nC} ราย)</div>
+        ${callsHtml}
+      </div>
+      <div>
+        <div class="sc-col-title">✅ กลับมาฝาก (${nR} ราย)</div>
+        ${retHtml}
+      </div>
+    </div>
+  </div>`;
+  // Scroll to panel
+  document.getElementById('sc-day-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function scChangePeriod(delta) {
+  scDate = new Date(scDate.getFullYear(), scDate.getMonth()+delta, 1);
+  scSelectedDate=null;
+  document.getElementById('sc-day-panel').innerHTML='';
+  scLoad();
+}
+function scGoToday() {
+  scDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  scSelectedDate=null;
+  document.getElementById('sc-day-panel').innerHTML='';
+  scLoad();
+}
+
+// ─── Calendar View (legacy for tracking view) ─────
+const CAL_DAYS_TH = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const CAL_MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+let calDate = new Date(); // current display date
+let calViewType = 'month'; // 'month','week','day'
+let calDayData = {}; // key: 'YYYY-MM-DD' → {calls:[], returns:[]}
+let calSelectedDate = null;
+let calLoadedRange = {}; // track loaded months to avoid re-fetch
+
+function calInit() {
+  // Year select: current year back 1 year
+  const sel = document.getElementById('cal-year-select');
+  const now = new Date();
+  sel.innerHTML = '';
+  for(let y = now.getFullYear(); y >= now.getFullYear()-1; y--) {
+    sel.innerHTML += `<option value="${y}" ${y===calDate.getFullYear()?'selected':''}>${y+543}</option>`;
+  }
+  calLoad();
+}
+
+async function calLoad() {
+  // Determine fetch range based on view
+  let fetchStart, fetchEnd;
+  if(calViewType==='month') {
+    fetchStart = new Date(calDate.getFullYear(), calDate.getMonth(), 1);
+    fetchEnd = new Date(calDate.getFullYear(), calDate.getMonth()+1, 0);
+  } else if(calViewType==='week') {
+    const [ws, we] = getWeekBounds(calDate);
+    fetchStart = ws; fetchEnd = we;
+  } else {
+    fetchStart = calDate; fetchEnd = calDate;
+  }
+  const s = padDate(fetchStart), e = padDate(fetchEnd);
+  const rangeKey = `${s}|${e}`;
+  if(!calLoadedRange[rangeKey]) {
+    await calFetchData(s, e);
+    calLoadedRange[rangeKey] = true;
+  }
+  calRender();
+}
+
+async function calFetchData(startStr, endStr) {
+  // Fetch rounds where call_date OR return_date falls in range
+  const [byCalls, byReturns] = await Promise.all([
+    sb('GET','follow_up_rounds','',
+      `select=id,round_number,call_date,return_date,status,answered,not_answered,sms_sent,note,customer_id,customers(phone,total_deposit,sites(name))&call_date=gte.${startStr}&call_date=lte.${endStr}&order=call_date`),
+    sb('GET','follow_up_rounds','',
+      `select=id,round_number,call_date,return_date,status,customers(phone,total_deposit,sites(name))&return_date=gte.${startStr}&return_date=lte.${endStr}&order=return_date`),
+  ]);
+  // Index by date
+  for(const r of (byCalls||[])) {
+    const k = r.call_date;
+    if(!k) continue;
+    if(!calDayData[k]) calDayData[k] = {calls:[], returns:[]};
+    if(!calDayData[k].calls.find(x=>x.id===r.id)) calDayData[k].calls.push(r);
+  }
+  for(const r of (byReturns||[])) {
+    const k = r.return_date;
+    if(!k) continue;
+    if(!calDayData[k]) calDayData[k] = {calls:[], returns:[]};
+    if(!calDayData[k].returns.find(x=>x.id===r.id)) calDayData[k].returns.push(r);
+  }
+}
+
+function calRender() {
+  // Update title
+  const titleEl = document.getElementById('cal-title');
+  if(calViewType==='month')
+    titleEl.textContent = `${CAL_MONTHS_TH[calDate.getMonth()]} ${calDate.getFullYear()+543}`;
+  else if(calViewType==='week') {
+    const [ws,we] = getWeekBounds(calDate);
+    titleEl.textContent = `${fmtDate(padDate(ws))} — ${fmtDate(padDate(we))}`;
+  } else {
+    titleEl.textContent = fmtDate(padDate(calDate));
+  }
+  // Update year select
+  document.getElementById('cal-year-select').value = calDate.getFullYear();
+
+  // Show/hide sub-views
+  document.getElementById('cal-view-month').style.display = calViewType==='month'?'':'none';
+  document.getElementById('cal-view-week').style.display = calViewType==='week'?'':'none';
+  document.getElementById('cal-view-day').style.display = calViewType==='day'?'':'none';
+
+  if(calViewType==='month') renderCalMonth();
+  else if(calViewType==='week') renderCalWeek();
+  else renderCalDay(padDate(calDate));
+}
+
+function renderCalMonth() {
+  const year = calDate.getFullYear(), month = calDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = padDate(new Date());
+  let html = '';
+  // Empty cells before first day
+  for(let i=0;i<firstDay;i++) html += `<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const data = calDayData[dateStr]||{calls:[],returns:[]};
+    const nCalls = data.calls.length, nRet = data.returns.length;
+    const totalDep = data.returns.reduce((s,r)=>s+(parseFloat(r.customers?.total_deposit)||0),0);
+    const isToday = dateStr===todayStr;
+    const isSelected = dateStr===calSelectedDate;
+    const dow = new Date(dateStr).getDay();
+    let borderCls = nCalls>0&&nRet>0?'has-both':nRet>0?'has-returns':nCalls>0?'has-calls':'';
+    let cellCls = `cal-cell ${borderCls}${isToday?' today':''}${isSelected?' selected':''}${dow===0?' sunday':dow===6?' saturday':''}`;
+    const dateNumHtml = isToday
+      ? `<div class="cal-date-num"><span style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center">${d}</span></div>`
+      : `<div class="cal-date-num">${d}</div>`;
+    const statsHtml = nCalls===0&&nRet===0 ? '' : `<div class="cal-stats">
+      ${nCalls>0?`<div class="cal-stat"><span class="dot" style="background:var(--cyan)"></span><span class="val">${nCalls}</span><span style="color:var(--text3)"> โทร</span></div>`:''}
+      ${nRet>0?`<div class="cal-stat"><span class="dot" style="background:var(--green)"></span><span class="val">${nRet}</span><span style="color:var(--text3)"> กลับมา</span></div>`:''}
+      ${totalDep>0?`<div class="cal-stat"><span class="dot" style="background:var(--yellow)"></span><span class="val">${(totalDep/1000).toFixed(1)}K</span><span style="color:var(--text3)"> ฿</span></div>`:''}
+    </div>`;
+    const heatColor = nRet>5?'rgba(34,197,94,.6)':nRet>2?'rgba(34,197,94,.35)':nRet>0?'rgba(34,197,94,.18)':nCalls>0?'rgba(6,182,212,.15)':'transparent';
+    html += `<div class="${cellCls}" onclick="calSelectDay('${dateStr}')">
+      ${dateNumHtml}${statsHtml}
+      <div class="cal-heatmap" style="background:${heatColor}"></div>
+    </div>`;
+  }
+  // Trailing empties
+  const total = firstDay + daysInMonth;
+  const trailing = (7 - (total % 7)) % 7;
+  for(let i=0;i<trailing;i++) html += `<div class="cal-cell empty"></div>`;
+  document.getElementById('cal-grid').innerHTML = html;
+  // If selected day, show panel
+  if(calSelectedDate) calShowDayPanel(calSelectedDate);
+}
+
+function calSelectDay(dateStr) {
+  calSelectedDate = dateStr;
+  // Deselect previous
+  document.querySelectorAll('.cal-cell.selected').forEach(el=>el.classList.remove('selected'));
+  document.querySelector(`[onclick="calSelectDay('${dateStr}')"]`)?.classList.add('selected');
+  calShowDayPanel(dateStr);
+}
+
+function calShowDayPanel(dateStr) {
+  const panel = document.getElementById('cal-day-panel');
+  panel.style.display='block';
+  const data = calDayData[dateStr]||{calls:[],returns:[]};
+  const nCalls = data.calls.length, nRet = data.returns.length;
+  const totalDep = data.returns.reduce((s,r)=>s+(parseFloat(r.customers?.total_deposit)||0),0);
+
+  const callsHtml = data.calls.length===0
+    ? `<div style="color:var(--text3);font-size:12px;padding:10px 0">ไม่มีการโทรติดตามวันนี้</div>`
+    : data.calls.map(r=>`<div class="event-card">
+        <div class="ec-phone">0${(r.customers?.phone||'').slice(-9)}</div>
+        <div class="ec-site">${r.customers?.sites?.name||'—'} · รอบที่ ${r.round_number}</div>
+        <div class="ec-meta">
+          ${r.answered?'<span class="st st-answered" style="font-size:10px">รับสาย</span>':r.not_answered?'<span class="st st-notans" style="font-size:10px">ไม่รับสาย</span>':''}
+          ${r.sms_sent?'<span class="st st-sms" style="font-size:10px">📩 SMS</span>':''}
+          ${r.status==='returned'?`<span class="st st-returned" style="font-size:10px">✅ กลับมาแล้ว${r.return_date?' ('+fmtDate(r.return_date)+')':''}</span>`:
+            r.status==='churned'?'<span class="st st-churned" style="font-size:10px">❌ หายไปอีก</span>':
+            '<span class="st st-tracking" style="font-size:10px">🔄 ติดตามอยู่</span>'}
+          ${r.note?`<span style="background:var(--surface);border:1px solid var(--border);padding:1px 7px;border-radius:6px;font-size:10px;color:var(--text2)">${r.note}</span>`:''}
+        </div>
+      </div>`).join('');
+
+  const retHtml = data.returns.length===0
+    ? `<div style="color:var(--text3);font-size:12px;padding:10px 0">ไม่มีลูกค้ากลับมาฝากวันนี้</div>`
+    : data.returns.map(r=>{
+        const dep = parseFloat(r.customers?.total_deposit)||0;
+        const gap = dateDiff(r.call_date, r.return_date);
+        return `<div class="event-card" style="border-left-color:var(--green)">
+          <div class="ec-phone">0${(r.customers?.phone||'').slice(-9)}</div>
+          <div class="ec-site">${r.customers?.sites?.name||'—'} · รอบที่ ${r.round_number}</div>
+          <div class="ec-meta">
+            <span class="st st-returned" style="font-size:10px">✅ กลับมาฝาก</span>
+            ${dep>0?`<span style="color:var(--green);font-weight:700;font-size:12px">${Math.round(dep).toLocaleString('th-TH')} ฿</span>`:''}
+            ${gap!==null?`<span class="gap-badge ${gapClass(gap)}" style="width:22px;height:22px;font-size:10px">${gap}</span><span style="font-size:10px;color:var(--text2)">วันหลังโทร</span>`:''}
+            ${r.call_date?`<span style="font-size:10px;color:var(--text3)">โทร ${fmtDate(r.call_date)}</span>`:''}
+          </div>
+        </div>`;
+      }).join('');
+
+  panel.innerHTML = `<div class="day-detail-panel">
+    <div class="day-detail-title">
+      📅 ${fmtDate(dateStr)}
+      <span style="font-size:12px;color:var(--text3);font-weight:400">${nCalls} โทร · ${nRet} กลับมา · ${Math.round(totalDep).toLocaleString('th-TH')} ฿</span>
+    </div>
+    <div class="day-sections">
+      <div>
+        <div class="day-section-title"><span class="dot" style="background:var(--cyan);width:8px;height:8px;border-radius:50%;display:inline-block"></span>โทรติดตามวันนี้ (${nCalls} ราย)</div>
+        ${callsHtml}
+      </div>
+      <div>
+        <div class="day-section-title"><span class="dot" style="background:var(--green);width:8px;height:8px;border-radius:50%;display:inline-block"></span>กลับมาฝากวันนี้ (${nRet} ราย)</div>
+        ${retHtml}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCalWeek() {
+  const [ws, we] = getWeekBounds(calDate);
+  const todayStr = padDate(new Date());
+  let html = '';
+  for(let i=0;i<7;i++) {
+    const d = new Date(ws); d.setDate(ws.getDate()+i);
+    const ds = padDate(d);
+    const data = calDayData[ds]||{calls:[],returns:[]};
+    const isToday = ds===todayStr;
+    const callItems = data.calls.map(r=>`<div class="week-event call">
+      <div style="font-family:monospace;font-size:11px;font-weight:600">0${(r.customers?.phone||'').slice(-9)}</div>
+      <div style="font-size:10px;color:var(--text3)">${r.customers?.sites?.name||'—'}</div>
+      <div style="margin-top:3px">${r.answered?'<span class="st st-answered" style="font-size:9px;padding:1px 5px">รับสาย</span>':r.not_answered?'<span class="st st-notans" style="font-size:9px;padding:1px 5px">ไม่รับสาย</span>':''}</div>
+    </div>`).join('');
+    const retItems = data.returns.map(r=>`<div class="week-event ret">
+      <div style="font-family:monospace;font-size:11px;font-weight:600">0${(r.customers?.phone||'').slice(-9)}</div>
+      <div style="font-size:10px;color:var(--green)">✅ กลับมาฝาก</div>
+    </div>`).join('');
+    const totalItems = data.calls.length+data.returns.length;
+    html += `<div class="week-day-col">
+      <div class="week-day-hdr ${isToday?'today-col':''}">
+        <div class="day-name">${CAL_DAYS_TH[d.getDay()]}</div>
+        <div class="day-num-big">${d.getDate()}</div>
+        <div style="font-size:10px;color:var(--text3)">${totalItems>0?totalItems+' กิจกรรม':''}</div>
+      </div>
+      <div class="week-day-body" style="max-height:400px;overflow-y:auto">
+        ${data.calls.length>0?`<div style="font-size:9px;color:var(--cyan);font-weight:700;margin-bottom:4px;text-transform:uppercase">📞 โทรติดตาม</div>${callItems}`:''}
+        ${data.returns.length>0?`<div style="font-size:9px;color:var(--green);font-weight:700;margin:6px 0 4px;text-transform:uppercase">✅ กลับมาฝาก</div>${retItems}`:''}
+        ${totalItems===0?`<div style="color:var(--text3);font-size:11px;text-align:center;padding:20px 0">ไม่มีกิจกรรม</div>`:''}
+      </div>
+    </div>`;
+  }
+  document.getElementById('cal-week-grid').innerHTML = html;
+  document.getElementById('cal-day-panel').style.display='none';
+}
+
+function renderCalDay(dateStr) {
+  document.getElementById('cal-day-detail').innerHTML = '';
+  document.getElementById('cal-day-panel').style.display='none';
+  calSelectedDate = dateStr;
+  const data = calDayData[dateStr]||{calls:[],returns:[]};
+  // Reuse day panel logic but render inside day view
+  const panel = document.getElementById('cal-day-detail');
+  const nCalls=data.calls.length, nRet=data.returns.length;
+  const totalDep = data.returns.reduce((s,r)=>s+(parseFloat(r.customers?.total_deposit)||0),0);
+  const callsHtml = data.calls.length===0
+    ? `<div style="color:var(--text3);font-size:12px;padding:10px 0">ไม่มีการโทรติดตามวันนี้</div>`
+    : data.calls.map(r=>`<div class="event-card">
+        <div class="ec-phone">0${(r.customers?.phone||'').slice(-9)}</div>
+        <div class="ec-site">${r.customers?.sites?.name||'—'} · รอบที่ ${r.round_number}</div>
+        <div class="ec-meta">
+          ${r.answered?'<span class="st st-answered" style="font-size:10px">รับสาย</span>':r.not_answered?'<span class="st st-notans" style="font-size:10px">ไม่รับสาย</span>':''}
+          ${r.status==='returned'?`<span class="st st-returned" style="font-size:10px">✅ กลับมา${r.return_date?' '+fmtDate(r.return_date):''}</span>`:''}
+          ${r.note?`<span style="background:var(--surface);border:1px solid var(--border);padding:1px 7px;border-radius:6px;font-size:10px">${r.note}</span>`:''}
+        </div>
+      </div>`).join('');
+  const retHtml = data.returns.length===0
+    ? `<div style="color:var(--text3);font-size:12px;padding:10px 0">ไม่มีลูกค้ากลับมาฝากวันนี้</div>`
+    : data.returns.map(r=>{
+        const dep=parseFloat(r.customers?.total_deposit)||0, gap=dateDiff(r.call_date,r.return_date);
+        return `<div class="event-card" style="border-left-color:var(--green)">
+          <div class="ec-phone">0${(r.customers?.phone||'').slice(-9)}</div>
+          <div class="ec-site">${r.customers?.sites?.name||'—'}</div>
+          <div class="ec-meta">
+            <span class="st st-returned" style="font-size:10px">✅ กลับมาฝาก</span>
+            ${dep>0?`<span style="color:var(--green);font-weight:700;font-size:12px">${Math.round(dep).toLocaleString('th-TH')} ฿</span>`:''}
+            ${gap!==null?`<span class="gap-badge ${gapClass(gap)}" style="width:22px;height:22px;font-size:10px">${gap}</span><span style="font-size:10px;color:var(--text2)">วัน</span>`:''}
+          </div>
+        </div>`;}).join('');
+  panel.innerHTML=`<div class="day-detail-panel">
+    <div class="day-detail-title">📅 ${fmtDate(dateStr)}
+      <span style="font-size:12px;color:var(--text3);font-weight:400">${nCalls} โทร · ${nRet} กลับมา · ${Math.round(totalDep).toLocaleString('th-TH')} ฿</span>
+    </div>
+    <div class="day-sections">
+      <div><div class="day-section-title">📞 โทรติดตาม (${nCalls})</div>${callsHtml}</div>
+      <div><div class="day-section-title">✅ กลับมาฝาก (${nRet})</div>${retHtml}</div>
+    </div>
+  </div>`;
+}
+
+function calChangePeriod(delta) {
+  if(calViewType==='month') {
+    calDate = new Date(calDate.getFullYear(), calDate.getMonth()+delta, 1);
+  } else if(calViewType==='week') {
+    calDate = new Date(calDate); calDate.setDate(calDate.getDate()+delta*7);
+  } else {
+    calDate = new Date(calDate); calDate.setDate(calDate.getDate()+delta);
+  }
+  calLoad();
+}
+
+function calGoToday() { calDate = new Date(); calLoad(); }
+function calChangeYear(y) { calDate = new Date(parseInt(y), calDate.getMonth(), 1); calLoad(); }
+function calSetView(v, btn) {
+  calViewType = v;
+  document.querySelectorAll('.cal-view-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('cal-day-panel').style.display='none';
+  calSelectedDate=null;
+  if(v==='day') calDate=new Date(); // default to today for day view
+  calLoad();
+}
+
+// ─── Tracking Weekly View ─────────────────────────
+const THAI_DAYS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+let trackingWeekStart = null;
+let trackingRounds = [];
+
+function getWeekBounds(d) {
+  const day = new Date(d);
+  const sun = new Date(day); sun.setDate(day.getDate() - day.getDay());
+  const sat = new Date(sun); sat.setDate(sun.getDate() + 6);
+  return [sun, sat];
+}
+
+function fmtDate(d) {
+  if(!d) return null;
+  const dt = new Date(d);
+  return `${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;
+}
+
+function dateDiff(d1, d2) {
+  if(!d1||!d2) return null;
+  const ms = new Date(d2) - new Date(d1);
+  return Math.round(ms / 86400000);
+}
+
+function padDate(d) {
+  return d.toISOString().slice(0,10);
+}
+
+function gapClass(days) {
+  if(days===null) return 'gap-none';
+  if(days===0) return 'gap-0';
+  if(days===1) return 'gap-1';
+  if(days<=3) return 'gap-2';
+  if(days<=7) return 'gap-3';
+  return 'gap-many';
+}
+
+function goThisWeek() {
+  trackingWeekStart = null;
+  loadTrackingView();
+}
+
+function changeWeek(delta) {
+  if(!trackingWeekStart) {
+    const [sun] = getWeekBounds(new Date());
+    trackingWeekStart = sun;
+  }
+  trackingWeekStart = new Date(trackingWeekStart);
+  trackingWeekStart.setDate(trackingWeekStart.getDate() + delta*7);
+  loadTrackingView();
+}
+
+async function loadTrackingView() {
+  // Set week bounds
+  if(!trackingWeekStart) {
+    const [sun] = getWeekBounds(new Date());
+    trackingWeekStart = sun;
+  }
+  const [wStart, wEnd] = getWeekBounds(trackingWeekStart);
+  const wStartStr = padDate(wStart), wEndStr = padDate(wEnd);
+
+  // Update label
+  document.getElementById('week-label').textContent =
+    `${THAI_DAYS[0]} ${fmtDate(wStartStr)} — ${THAI_DAYS[6]} ${fmtDate(wEndStr)}`;
+
+  document.getElementById('tracking-tbody').innerHTML =
+    `<tr><td colspan="10"><div class="loader"><div class="spinner"></div>กำลังโหลด...</div></td></tr>`;
+
+  // Fetch follow_up_rounds in this week with customer & site info
+  // We query by call_date range, join customers→sites
+  const rounds = await sb('GET','follow_up_rounds','',
+    `select=*,customers(phone,total_deposit,sites(name))&call_date=gte.${wStartStr}&call_date=lte.${wEndStr}&order=call_date,id`
+  );
+
+  trackingRounds = rounds||[];
+
+  // Populate site filter
+  const siteFilter = document.getElementById('tracking-site-filter');
+  const existingSites = new Set(['']);
+  siteFilter.innerHTML = '<option value="">ทุกเว็บ</option>';
+  for(const r of trackingRounds) {
+    const sn = r.customers?.sites?.name||'';
+    if(sn && !existingSites.has(sn)) {
+      existingSites.add(sn);
+      siteFilter.innerHTML += `<option value="${sn}">${sn}</option>`;
+    }
+  }
+
+  renderTrackingCards(wStart, wEnd);
+  renderTrackingTable();
+}
+
+function renderTrackingCards(wStart, wEnd) {
+  const r = trackingRounds;
+  const total = r.length;
+  const returned = r.filter(x=>x.status==='returned');
+  const totalDep = returned.reduce((s,x)=>s+(parseFloat(x.customers?.total_deposit)||0),0);
+  const gaps = returned.filter(x=>x.call_date&&x.return_date).map(x=>dateDiff(x.call_date,x.return_date));
+  const avgGap = gaps.length>0 ? (gaps.reduce((s,v)=>s+v,0)/gaps.length).toFixed(1) : '—';
+
+  document.getElementById('tracking-cards').innerHTML = `
+    <div class="card blue"><div class="card-icon">📞</div>
+      <div class="card-label">โทรติดตามสัปดาห์นี้</div>
+      <div class="card-value">${total.toLocaleString()}</div>
+      <div class="card-sub">ระหว่าง ${fmtDate(padDate(wStart))} – ${fmtDate(padDate(wEnd))}</div>
+    </div>
+    <div class="card green"><div class="card-icon">✅</div>
+      <div class="card-label">กลับมาฝากแล้ว</div>
+      <div class="card-value">${returned.length}</div>
+      <div class="card-sub">${total>0?(returned.length/total*100).toFixed(1):0}% ของที่ติดตาม</div>
+    </div>
+    <div class="card yellow"><div class="card-icon">⏱️</div>
+      <div class="card-label">เฉลี่ยวันที่รอกลับมาฝาก</div>
+      <div class="card-value">${avgGap} <span style="font-size:14px;font-weight:400">วัน</span></div>
+      <div class="card-sub">นับจากวันที่โทรติดตาม</div>
+    </div>
+    <div class="card red"><div class="card-icon">💰</div>
+      <div class="card-label">ยอดฝากรวมสัปดาห์นี้</div>
+      <div class="card-value">${Math.round(totalDep).toLocaleString('th-TH')}</div>
+      <div class="card-sub">฿ บาท</div>
+    </div>`;
+
+  // Gap distribution
+  const dist = {0:0, 1:0, '2-3':0, '4-7':0, '7+':0, none:0};
+  for(const x of trackingRounds) {
+    if(x.status!=='returned'){dist.none++;continue}
+    const g = dateDiff(x.call_date, x.return_date);
+    if(g===null){dist.none++}
+    else if(g===0) dist[0]++;
+    else if(g===1) dist[1]++;
+    else if(g<=3) dist['2-3']++;
+    else if(g<=7) dist['4-7']++;
+    else dist['7+']++;
+  }
+  document.getElementById('gap-dist').innerHTML = `
+    <div class="gap-dist-box"><div class="gap-dist-num" style="color:var(--green)">${dist[0]}</div><div class="gap-dist-label">กลับมาวันเดียวกัน</div></div>
+    <div class="gap-dist-box"><div class="gap-dist-num" style="color:var(--green)">${dist[1]}</div><div class="gap-dist-label">1 วันหลังโทร</div></div>
+    <div class="gap-dist-box"><div class="gap-dist-num" style="color:var(--yellow)">${dist['2-3']}</div><div class="gap-dist-label">2-3 วันหลังโทร</div></div>
+    <div class="gap-dist-box"><div class="gap-dist-num" style="color:var(--yellow)">${dist['4-7']}</div><div class="gap-dist-label">4-7 วันหลังโทร</div></div>
+    <div class="gap-dist-box"><div class="gap-dist-num" style="color:var(--text3)">${dist.none}</div><div class="gap-dist-label">ยังไม่กลับมา</div></div>`;
+}
+
+function renderTrackingTable() {
+  const siteF = document.getElementById('tracking-site-filter').value;
+  const statusF = document.getElementById('tracking-status-filter').value;
+
+  let rows = trackingRounds;
+  if(siteF) rows = rows.filter(r=>r.customers?.sites?.name===siteF);
+  if(statusF) rows = rows.filter(r=>r.status===statusF);
+
+  if(rows.length===0){
+    document.getElementById('tracking-tbody').innerHTML =
+      `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">ไม่พบข้อมูลในสัปดาห์นี้</td></tr>`;
+    return;
+  }
+
+  document.getElementById('tracking-tbody').innerHTML = rows.map((r,i)=>{
+    const phone = r.customers?.phone||'';
+    const site = r.customers?.sites?.name||'—';
+    const callBadge = r.answered
+      ? `<span class="st st-answered">รับสาย</span>`
+      : r.not_answered
+        ? `<span class="st st-notans">ไม่รับสาย</span>`
+        : `<span style="color:var(--text3)">—</span>`;
+
+    const returnDateStr = r.return_date ? fmtDate(r.return_date) : null;
+    const gap = dateDiff(r.call_date, r.return_date);
+    const gapHtml = returnDateStr
+      ? `<span class="gap-badge ${gapClass(gap)}">${gap}</span> <span style="font-size:11px;color:var(--text2)">วัน</span>`
+      : `<span style="color:var(--text3);font-size:12px">—</span>`;
+
+    const dep = parseFloat(r.customers?.total_deposit)||0;
+    const depHtml = dep>0
+      ? `<span style="color:var(--green);font-weight:700">${Math.round(dep).toLocaleString('th-TH')} ฿</span>`
+      : `<span style="color:var(--text3)">—</span>`;
+
+    const statusHtml = r.status==='returned'
+      ? `<span class="st st-returned">✅ กลับมาแล้ว</span>`
+      : r.status==='churned'
+        ? `<span class="st st-churned">❌ หายไปอีก</span>`
+        : `<span class="st st-tracking">🔄 กำลังติดตาม</span>`;
+
+    const rowCls = r.status==='returned'?'row-returned':r.status==='churned'?'row-churned':'row-tracking';
+
+    // Timeline visual
+    const timelineHtml = returnDateStr ? `
+      <div class="timeline" style="font-size:11px;color:var(--text2);margin-top:2px">
+        <span class="tl-dot" style="background:var(--accent)"></span>
+        <span>${fmtDate(r.call_date)}</span>
+        <div class="tl-line"></div>
+        <span class="tl-dot" style="background:var(--green)"></span>
+        <span>${returnDateStr}</span>
+      </div>` : '';
+
+    return `<tr class="${rowCls}">
+      <td style="color:var(--text3)">${i+1}</td>
+      <td>
+        <div class="phone">0${phone.slice(-9)}</div>
+        ${timelineHtml}
+      </td>
+      <td style="font-size:12px">${site}</td>
+      <td style="color:var(--text2);font-size:12px">รอบที่ ${r.round_number}</td>
+      <td style="font-size:12px">${fmtDate(r.call_date)||'—'}</td>
+      <td>${callBadge}</td>
+      <td style="font-size:12px;color:${returnDateStr?'var(--green)':'var(--text3)'}">${returnDateStr||'—'}</td>
+      <td>${gapHtml}</td>
+      <td>${depHtml}</td>
+      <td>${statusHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Modal helpers ────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('show')}));
+
+// ─── Toast ────────────────────────────────────────
+let toastTimer;
+function toast(msg,type='success'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`show ${type}`;
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.className='',3000);
+}
+
+// ─── Init ─────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
